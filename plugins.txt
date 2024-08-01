@@ -1,0 +1,6 @@
+docker-plugin:latest
+docker-workflow:latest
+gitlab-plugin:latest
+warnings-ng:latest
+htmlpublisher:latest
+blueocean:latest

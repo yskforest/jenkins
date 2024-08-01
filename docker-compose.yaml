@@ -1,8 +1,14 @@
 services:
-  web:
-    image: jenkins/jenkins:lts-jdk17
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # image: jenkins/jenkins:lts
     ports:
       - 8080:8080
+      - 50000:50000
     volumes:
       - ./jenkins_home:/var/jenkins_home
+      - ./plugins.txt:/var/jenkins_home/plugins.txt:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     network_mode: "host"
