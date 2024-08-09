@@ -1,8 +1,8 @@
 # jenkins
 
-## setup
+## usage
 ```bash
-base setup.sh
+bash setup.sh
 docker compose build
 docker compose up
 ```
