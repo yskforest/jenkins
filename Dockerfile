@@ -1,4 +1,4 @@
-FROM jenkins/jenkins:2.470-jdk17
+FROM jenkins/jenkins:lts
 
 USER root
 RUN apt-get update && apt-get install -y \
@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     software-properties-common lsb-release \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# install docker
 RUN curl -fsSLo /usr/share/keyrings/docker-archive-keyring.asc \
     https://download.docker.com/linux/debian/gpg
 RUN echo "deb [arch=$(dpkg --print-architecture) \
@@ -22,5 +23,6 @@ RUN groupadd -o -g ${DOCKER_GROUP_GID} docker
 RUN usermod -g docker jenkins
 
 USER jenkins
+ARG JAVA_OPTS
 COPY --chown=jenkins ./plugins.txt ./plugins.txt
 RUN jenkins-plugin-cli --plugin-file ./plugins.txt

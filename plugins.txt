@@ -1,6 +1,8 @@
+pipeline-stage-view:latest
 docker-plugin:latest
 docker-workflow:latest
 gitlab-plugin:latest
 warnings-ng:latest
 htmlpublisher:latest
+sonar:latest
 blueocean:latest
