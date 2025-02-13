@@ -6,3 +6,6 @@ warnings-ng:latest
 htmlpublisher:latest
 sonar:latest
 blueocean:latest
+sloccount:latest
+coverage:latest
+junit:latest

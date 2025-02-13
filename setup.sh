@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SCTIPR_DIR=$(cd $(dirname $0);pwd)
-cd ${SCTIPR_DIR}
+SCRIPT_DIR=$(cd $(dirname $0);pwd)
+cd ${SCRIPT_DIR}
 
 # 権限を正しく付与しないとdockerにmountできない
 mkdir jenkins_home
