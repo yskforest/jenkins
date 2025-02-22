@@ -9,3 +9,4 @@ blueocean:latest
 sloccount:latest
 coverage:latest
 junit:latest
+role-strategy:latest
