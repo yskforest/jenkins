@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
     docker-ce-cli \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s
+RUN cd /usr/local \
+    && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s
 
 ARG DOCKER_GROUP_GID=999
 RUN groupadd -o -g ${DOCKER_GROUP_GID} docker

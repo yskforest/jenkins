@@ -1,0 +1,46 @@
+pipeline {
+    agent none
+    environment {
+        GIT_URL = 'https://github.com/isl-org/Open3D.git'
+        GIT_BRANCH = 'main'
+        CRED_ID = 'XXX'
+    }
+    options {
+        // This is required if you want to clean before build
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+        stage('Git') {
+            agent any
+            steps {
+                cleanWs()
+                sh 'mkdir report'
+                dir('src') {
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: "${GIT_BRANCH}"]],
+                        userRemoteConfigs: [[url: "${GIT_URL}", credentialsId: "${CRED_ID}"]]])
+                }
+            }
+        }
+
+        stage('Count Line Code') {
+            agent {
+                docker { image 'dev_env-app' }
+            }
+            steps {
+                sh 'cloc -version'
+                sh 'doxygen -v'
+                sh 'dot -V'
+                sh 'textlint -v'
+            }
+        }
+
+        stage('Post Process') {
+            agent any
+            steps {
+                archiveArtifacts artifacts: '**/.*', followSymlinks: false
+            }
+        }
+    }
+}
