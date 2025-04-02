@@ -1,0 +1,5 @@
+$env:JENKINS_URL = "http://XXX:XXX"
+$env:NODE_NAME = "XXX"
+$env:AGENT_SECRET = "XXX"
+$env:WORK_DIR = "./"
+$env:JAVA_BIN_DIR = "openjdk/bin"
