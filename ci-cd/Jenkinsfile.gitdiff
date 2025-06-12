@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+    stages {
+        stage('Pre Process') {
+            steps {
+                cleanWs()
+                checkout scm
+                script {
+                    if (!env.GIT_PREVIOUS_SUCCESSFUL_COMMIT) {
+                        echo '初回ビルド、または前回成功したビルドが見つかりません。'
+                        echo '今回は静的解析をスキップします。'
+                        currentBuild.result = 'SUCCESS'
+                        return
+                    }
+                    echo '比較対象のコミット:'
+                    echo "  - 最新: ${env.GIT_COMMIT}"
+                    echo "  - 前回成功: ${env.GIT_PREVIOUS_SUCCESSFUL_COMMIT}"
+                }
+            }
+        }
+
+        stage('Static Analysis') {
+            steps {
+                script {
+                    // 差分のあるファイルリストを取得 (削除されたファイルは除く)
+                    // --diff-filter=d で削除(Deleted)されたファイルを除外
+                    def changedFiles = sh(
+                        script: "git diff --name-only --diff-filter=d ${env.GIT_PREVIOUS_SUCCESSFUL_COMMIT} ${env.GIT_COMMIT}",
+                        returnStdout: true
+                    ).trim()
+
+                    if (changedFiles) {
+                        // 4. 解析対象のファイル（例: .js, .ts）のみをフィルタリング
+                        def targetFiles = changedFiles.split('\n').findAll {
+                            it.endsWith('.js') || it.endsWith('.ts')
+                        }
+
+                        if (targetFiles) {
+                            echo "以下の変更ファイルを静的解析します:\n${targetFiles.join('\n')}"
+                            try {
+                                // 5. ESLintで静的解析を実行
+                                // npxを使えば、package.jsonのdevDependenciesにあるeslintを直接実行できます
+                                // 必要な依存関係をインストール
+                                sh 'npm install'
+                                // ファイルリストを引数に渡して解析
+                                sh "npx eslint ${targetFiles.join(' ')}"
+                            } catch (e) {
+                                // 解析エラーがあった場合、ビルドを 'UNSTABLE' (不安定) にする
+                                currentBuild.result = 'UNSTABLE'
+                                error '静的解析でエラーが検出されました 🚨'
+                            }
+                        } else {
+                            echo '解析対象の拡張子を持つファイルに変更はありませんでした。'
+                        }
+                    } else {
+                        echo 'ファイルに変更はありませんでした。静的解析をスキップします。'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+        }
+        success {
+            echo 'ビルドが正常に完了しました。🎉'
+        }
+        unstable {
+            echo '静的解析で警告がありましたが、ビルドは完了しました。👀'
+        }
+        failure {
+            echo 'ビルドが失敗しました。😢'
+        }
+    }
+}

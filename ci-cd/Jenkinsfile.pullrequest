@@ -1,0 +1,73 @@
+pipeline {
+    agent any // 任意のJenkinsエージェントで実行
+
+    stages {
+        stage('Pull Request 静的解析') {
+            // このステージはPull Requestのビルドの場合のみ実行する
+            when {
+                changeRequest()
+            }
+            steps {
+                script {
+                    echo 'Pull Request ビルドを検出しました。'
+                    echo "  - PR番号: ${env.CHANGE_ID}"
+                    echo "  - ターゲットブランチ (マージ先): ${env.CHANGE_TARGET}"
+                    echo "  - ソースブランチ (このPRのブランチ): ${env.BRANCH_NAME}"
+
+                    // 1. ターゲットブランチとの差分ファイルリストを取得
+                    // --diff-filter=d で削除(Deleted)されたファイルを除外します
+                    // `origin/${env.CHANGE_TARGET}` でリモートのターゲットブランチの最新状態と比較します
+                    def changedFiles = sh(
+                        script: "git diff --name-only --diff-filter=d origin/${env.CHANGE_TARGET} HEAD",
+                        returnStdout: true
+                    ).trim()
+
+                    if (changedFiles) {
+                        // 2. 解析対象のファイル（例: .js, .ts）のみをフィルタリング
+                        def targetFiles = changedFiles.split('\n').findAll {
+                            it.endsWith('.js') || it.endsWith('.ts')
+                        }
+
+                        if (targetFiles) {
+                            echo "以下の変更ファイルを静的解析します:\n${targetFiles.join('\n')}"
+                            try {
+                                // 3. ESLintで静的解析を実行
+                                // 必要な依存関係をインストール
+                                sh 'npm install'
+                                // ファイルリストを引数に渡して解析
+                                sh "npx eslint ${targetFiles.join(' ')}"
+
+                                // 成功した場合、Jenkinsは自動的にGitHubに成功ステータスを通知します
+                                echo '静的解析が正常に完了しました。'
+                            } catch (e) {
+                                // 解析エラーがあった場合、ビルドを 'UNSTABLE' にする
+                                // これにより、PRをマージ不可にはしないが、警告としてGitHub上に表示される
+                                currentBuild.result = 'UNSTABLE'
+                                error '静的解析でエラーが検出されました。詳細はコンソールログを確認してください 🚨'
+                            }
+                        } else {
+                            echo '解析対象の拡張子を持つファイルに変更はありませんでした。'
+                        }
+                    } else {
+                        echo 'ファイルに変更はありませんでした。静的解析をスキップします。'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pull Requestのチェックが正常に完了しました。🎉'
+        }
+        unstable {
+            echo '静的解析で警告が検出されました。👀'
+        }
+        failure {
+            echo 'ビルドが失敗しました。😢'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
