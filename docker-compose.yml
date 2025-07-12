@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - DOCKER_GROUP_GID=999
     ports:
       - 8080:8080
     restart: always
